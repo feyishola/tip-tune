@@ -1,4 +1,4 @@
-import { IsUUID, IsOptional, IsString } from 'class-validator';
+import { IsUUID, IsOptional, IsString, MaxLength } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { SanitiseAsPlainText } from '../common/utils/sanitise.util';
 
@@ -26,4 +26,13 @@ export class CreateTipDto {
   @IsString()
   @SanitiseAsPlainText()
   message?: string;
+
+  @ApiPropertyOptional({
+    description: 'Client-supplied idempotency key (UUID or opaque string, max 128 chars). Re-submitting with the same key returns the original tip instead of creating a duplicate.',
+    example: '550e8400-e29b-41d4-a716-446655440099',
+  })
+  @IsOptional()
+  @IsString()
+  @MaxLength(128)
+  idempotencyKey?: string;
 }

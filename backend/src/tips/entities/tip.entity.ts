@@ -47,6 +47,10 @@ export class Tip {
   @Column({ length: 64, unique: true })
   stellarTxHash: string;
 
+  @Column({ length: 128, nullable: true, unique: true })
+  @Index()
+  idempotencyKey?: string;
+
   @Column({ length: 56 })
   senderAddress: string;
 

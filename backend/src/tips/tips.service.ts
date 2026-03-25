@@ -65,7 +65,20 @@ export class TipsService {
   ) {}
 
   async create(userId: string, createTipDto: CreateTipDto): Promise<Tip> {
-    const { artistId, trackId, stellarTxHash, message } = createTipDto;
+    const { artistId, trackId, stellarTxHash, message, idempotencyKey } = createTipDto;
+
+    // --- Idempotency key check: replay the original response if key already seen ---
+    if (idempotencyKey) {
+      const existing = await this.tipRepository.findOne({
+        where: { idempotencyKey },
+      });
+      if (existing) {
+        this.logger.log(
+          `Idempotency replay for key=${idempotencyKey}, tipId=${existing.id}`,
+        );
+        return existing;
+      }
+    }
 
     const existingTip = await this.tipRepository.findOne({
       where: { stellarTxHash },
@@ -166,6 +179,7 @@ export class TipsService {
       status: TipStatus.VERIFIED,
       verifiedAt: new Date(),
       stellarTimestamp: new Date(txDetails.created_at),
+      ...(idempotencyKey ? { idempotencyKey } : {}),
     });
 
     const savedTip = await this.tipRepository.save(newTip);

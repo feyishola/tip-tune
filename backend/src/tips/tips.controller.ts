@@ -40,6 +40,11 @@ export class TipsController {
     description: 'User ID of the tipper',
     required: true,
   })
+  @ApiHeader({
+    name: 'Idempotency-Key',
+    description: 'Optional client-generated key (UUID recommended). Re-submitting with the same key returns the original tip without creating a duplicate.',
+    required: false,
+  })
   @ApiResponse({
     status: HttpStatus.CREATED,
     description: 'Tip successfully created',
@@ -56,11 +61,15 @@ export class TipsController {
   async create(
     @Body(ModerateMessagePipe) createTipDto: CreateTipDto,
     @Headers('x-user-id') userId: string,
+    @Headers('idempotency-key') idempotencyKeyHeader?: string,
   ): Promise<Tip> {
     if (!userId) {
       throw new BadRequestException('User ID header (x-user-id) is required');
     }
-    // Simple validation, in real app use AuthGuard
+    // Header takes precedence over body field; merge into DTO
+    if (idempotencyKeyHeader) {
+      createTipDto.idempotencyKey = idempotencyKeyHeader;
+    }
     return this.tipsService.create(userId, createTipDto);
   }
 
